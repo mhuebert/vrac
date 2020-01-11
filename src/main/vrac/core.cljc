@@ -93,8 +93,8 @@
                                             bindings)]
                   (get-deps env inner-context body))
     :comp (let [{:keys [keyword props children]} val
-                {:keys [tag]} (tag-id-class (str (symbol keyword)))
-                component-id (clojure.core/keyword tag)]
+                {:keys [tag]} (tag-id-class keyword)
+                component-id tag]
             (if (simple-keyword? keyword)
               ; an html node
               (->> (concat (vals props) children)

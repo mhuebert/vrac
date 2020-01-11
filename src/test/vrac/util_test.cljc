@@ -5,23 +5,31 @@
 
 (deftest tag-id-class-test
   (are [kw result]
-    (= (#'vu/tag-id-class (str (symbol kw))) result)
+    (= (#'vu/tag-id-class kw) result)
 
-    :.class1 {:tag "div"
+    :. {:tag :div
+        :id nil
+        :class []}
+
+    :.class1 {:tag :div
               :id nil
               :class ["class1"]}
 
-    :#the-one {:tag "div"
+    :#the-one {:tag :div
                :id "the-one"
                :class []}
 
-    :h1.class1#the-one.class2 {:tag "h1"
+    :h1.class1#the-one.class2 {:tag :h1
                                :id "the-one"
                                :class ["class1" "class2"]}
 
-    :todo/list.class1#the-one.class2 {:tag "todo/list"
+    :todo/list.class1#the-one.class2 {:tag :todo/list
                                       :id "the-one"
-                                      :class ["class1" "class2"]}))
+                                      :class ["class1" "class2"]}
+
+    :my.todo/list.class1#the-one.class2 {:tag :my.todo/list
+                                         :id "the-one"
+                                         :class ["class1" "class2"]}))
 
 (deftest merge-props-test
   (are [id class props result]

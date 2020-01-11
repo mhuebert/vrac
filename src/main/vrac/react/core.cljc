@@ -62,14 +62,14 @@
                            (with-meta {:inline true})))
                 :comp (let [{:keys [keyword props children]} val
                             rendered-props (map-vals props (partial render env context))
-                            {:keys [tag id class]} (tag-id-class (str (symbol keyword)))
-                            tag-kw (clojure.core/keyword tag)
+                            {:keys [tag id class]} (tag-id-class keyword)
+                            component-id tag
                             merged-props (cond->> (merge-id-class-with-props id class rendered-props)
                                            (::is-root-comp? env) (merge-id-class-with-props (:id context nil)
                                                                                             (:class context [])))
                             [component props] (if (simple-keyword? keyword) ; html node?
-                                                [tag (->html-attributes merged-props)]
-                                                [(-> @env-atom :components tag-kw :react-render)
+                                                [(name tag) (->html-attributes merged-props)]
+                                                [(-> @env-atom :components component-id :react-render)
                                                  #js {:vrac merged-props}])
                             children (into []
                                            (mapcat (fn [child]

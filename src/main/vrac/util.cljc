@@ -12,16 +12,18 @@
         (map (fn [[k v]] [k (apply f v args)]))
         m))
 
-(defn tag-id-class [name]
-  (reduce (fn [acc part]
-            (case (subs part 0 1)
-              "." (update acc :class conj (subs part 1))
-              "#" (assoc acc :id (subs part 1))
-              (assoc acc :tag part)))
-          {:tag "div"
-           :id nil
-           :class []}
-          (re-seq #"[#.]?[^#.]+" name)))
+(defn tag-id-class [kw]
+  (let [[ns name] ((juxt namespace name) kw)
+        tag-id-class (reduce (fn [acc part]
+                               (case (subs part 0 1)
+                                 "." (update acc :class conj (subs part 1))
+                                 "#" (assoc acc :id (subs part 1))
+                                 (assoc acc :tag part)))
+                             {:tag "div"
+                              :id nil
+                              :class []}
+                             (re-seq #"[#.]?[^#.]+" name))]
+    (update tag-id-class :tag #(keyword ns %))))
 
 ; TODO: rename class -> classes
 ; TODO: Specify that classes are all strings.
