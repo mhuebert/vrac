@@ -37,78 +37,56 @@
     '(let [a b, c a] [:p a b c d])
     '#{b d}))
 
-(deftest group-deps-test
-  (are [deps grouped-deps]
-    (= (#'v/group-deps deps) grouped-deps)
-
-    '()
-    '()
-
-    '(() () ())
-    '()
-
-    '((:1 nil))
-    '(:1 nil)
-
-    '((:1 ctx))
-    '(:1 ctx)
-
-    '(() (:1 ctx) ())
-    '(:1 ctx)
-
-    '((:1 ctx) (:2 ctx))
-    '((:1 ctx) (:2 ctx))))
-
 (deftest get-deps-test
   (are [template deps]
     (= (#'v/get-deps {} {} (parse-template template)) deps)
 
     nil
-    nil
+    [[]]
 
     'ctx
-    'ctx
+    '[[ctx]]
 
     '(:1 nil)
-    '(:1 nil)
+    '[[:1]]
 
     '(:1 ctx)
-    '(:1 ctx)
+    '[[ctx :1]]
 
     '(:2 (:1 ctx))
-    '(:2 (:1 ctx))
+    '[[ctx :1 :2]]
 
     '(:3 (:2 (:1 ctx)))
-    '(:3 (:2 (:1 ctx)))
+    '[[ctx :1 :2 :3]]
 
     '(if (:1 ctx1)
        [:p 1]
        [:p (:2 ctx1)])
-    '((:1 ctx1)
-      (:2 ctx1))
+    '[[ctx1 :1]
+      [ctx1 :2]]
 
     '(if (:1 ctx1)
        (:2 ctx1)
        (:3 ctx1))
-    '((:1 ctx1)
-      (:2 ctx1)
-      (:3 ctx1))
+    '[[ctx1 :1]
+      [ctx1 :2]
+      [ctx1 :3]]
 
     '[:p (:1 ctx1) (:2 ctx1)]
-    '((:1 ctx1)
-      (:2 ctx1))
+    '[[ctx1 :1]
+      [ctx1 :2]]
 
     '[:p (:1 ctx1) (:2 ctx2)]
-    '((:1 ctx1)
-      (:2 ctx2))
+    '[[ctx1 :1]
+      [ctx2 :2]]
 
     '(let [var1 (:1 ctx1)
            var2 (:2 ctx2)
            var3 (:3 var1)]
        [:p (:4 var1) (:5 var2) (:6 var3)])
-    '((:4 (:1 ctx1))
-      (:5 (:2 ctx2))
-      (:6 (:3 (:1 ctx1)))))
+    '[[ctx1 :1 :4]
+      [ctx2 :2 :5]
+      [ctx1 :1 :3 :6]])
 
   (let [components {::item {:parsed-template
                             (parse-template '[:li (:item/name item)])}
@@ -120,45 +98,8 @@
     (are [component-id deps]
       (= (#'v/get-deps env {} (-> env :components component-id :parsed-template)) deps)
 
-      ::item '(:item/name item)
-      ::list '(:item/name (:list/items list)))))
-
-(deftest flatten-deps-test
-  (are [deps flatten-deps]
-    (= (#'v/flatten-deps deps) flatten-deps)
-
-    nil
-    [[]]
-
-    'ctx
-    '[[ctx]]
-
-    '(:1)
-    '[[:1]]
-
-    '(:1 nil)
-    '[[:1]]
-
-    '(:1 ctx)
-    '[[:1 ctx]]
-
-    '(:2 (:1 ctx))
-    '[[:2 :1 ctx]]
-
-    '(:3 (:2 (:1 ctx)))
-    '[[:3 :2 :1 ctx]]
-
-    '(:3 (:2 ((:1 ctx1)
-              (:0 ctx0))))
-    '[[:3 :2 :1 ctx1]
-      [:3 :2 :0 ctx0]]
-
-    '((:4 (:1 ctx1))
-      (:5 (:2 ctx2))
-      (:6 (:3 (:1 ctx1))))
-    '[[:4 :1 ctx1]
-      [:5 :2 ctx2]
-      [:6 :3 :1 ctx1]]))
+      ::item '[[item :item/name]]
+      ::list '[[list :list/items :item/name]])))
 
 (deftest deps->eql-test
   (are [deps eql-queries]
@@ -169,6 +110,9 @@
 
     [[]]
     []
+
+    [[] [:1] []]
+    [:1]
 
     [[:1]]
     [:1]

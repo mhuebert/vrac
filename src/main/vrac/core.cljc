@@ -61,30 +61,26 @@
   [parsed-template]
   (get-template-props* #{} parsed-template))
 
-(defn- group-deps [deps]
-  (let [deps (filter seq deps)]
-    (cond-> deps
-            (= (count deps) 1) first)))
-
 (declare get-comp-deps)
 
 (defn- get-deps
   "Finds the dependencies in a parsed template."
-  ; context is a map of: bound-var -> (kw (kw (... (kw unbound-var))))
+  ; context is a map of: bound-var -> [(kw (kw (... (kw unbound-var)))) ...]
   [env context [kw val :as parsed-template]]
   (case kw
-    (:nil :boolean :number :string :keyword) nil
-    :symbol (context val val)
+    (:boolean :number :string :keyword) []
+    :nil [[]]
+    :symbol (context val [[val]])
     :map (->> (mapcat identity val) ; sequence k0 v0 k1 v1 ...
-              (map (partial get-deps env context))
-              group-deps)
+              (mapcat (partial get-deps env context))
+              (into []))
     :get-kw (let [{:keys [keyword valuable]} val]
-              (list keyword (get-deps env context valuable))) ; TODO: replace position by hashmap
+              (mapv #(conj % keyword) (get-deps env context valuable)))
     (:if :when) (let [{:keys [cond then else]} val]
                   (->> [cond then else]
                        (remove nil?)
-                       (map (partial get-deps env context))
-                       group-deps))
+                       (mapcat (partial get-deps env context))
+                       (into [])))
     (:let :for) (let [{:keys [bindings body]} val
                       inner-context (reduce (fn [context {:keys [symbol valuable]}]
                                               (assoc context
@@ -98,13 +94,12 @@
             (if (simple-keyword? keyword)
               ; an html node
               (->> (concat (vals props) children)
-                   (map (partial get-deps env context))
-                   group-deps)
+                   (mapcat (partial get-deps env context))
+                   (into []))
               ; a component
               (let [comp-context (into {}
                                        (map (fn [[k v]]
-                                              [(symbol k)
-                                               (get-deps env context v)]))
+                                              [(symbol k) (get-deps env context v)]))
                                        props)]
                 (get-comp-deps env comp-context component-id))))
     (:dsl :valuable) (get-deps env context val)))
@@ -113,30 +108,10 @@
   "Finds the dependencies in a component."
   [env context component-id]
   (let [deps (get-deps env context (-> env :components component-id :parsed-template))]
-    (-> (cond-> deps
-          (contains? context 'id) (conj (context 'id))
-          (contains? context 'class) (conj (context 'class)))
-        group-deps)))
-
-(defn- flatten-deps
-  "Returns a vector of flatten deps."
-  [deps]
-  (cond
-    (nil? deps) [[]]
-
-    ; either a keyword, a symbol or primitive value
-    (not (sequential? deps)) [[deps]]
-
-    ; this should not happen with correct inputs
-    ;(empty? deps) []
-
-    ; (first deps) is either a keyword, a symbol or primitive value
-    (not (sequential? (first deps)))
-    (mapv #(into [(first deps)] %)
-          (flatten-deps (second deps)))
-
-    ; this is a node with multiple deps, like [:p var1 var2]
-    :else (into [] (mapcat flatten-deps) deps)))
+    (->> (cond-> deps
+           (contains? context 'id) (conj (context 'id))
+           (contains? context 'class) (conj (context 'class)))
+         (into []))))
 
 (defn- deps->eql
   "Transform the flatten deps into eql query trees."
@@ -153,8 +128,6 @@
   "Returns the data usage (eql and values together) for this component."
   [env component-id]
   (->> (get-comp-deps env {} component-id)
-       (flatten-deps)
-       (map reverse)
        (deps->eql)))
 
 (defn render
