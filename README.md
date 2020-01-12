@@ -87,7 +87,7 @@ However, the Vrac components are not limited or coupled to those libraries.
 
 Vrac is still a work in progress, its API is likely to change often.
 
-## Install
+## Getting started
 
 There is no release on Clojars at the moment. To use it via Clojure Deps:
 
@@ -95,6 +95,9 @@ There is no release on Clojars at the moment. To use it via Clojure Deps:
 {:deps {vrac {:git/url "https://github.com/green-coder/vrac.git"
               :sha "<commit-sha>"}}}
 ```
+
+Alternatively, you can use the [Vrac template](https://github.com/green-coder/vrac-template)
+to generate a Shadow-CLJS project to get started more quickly.
 
 ## See also
 

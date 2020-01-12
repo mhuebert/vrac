@@ -5,6 +5,8 @@
 - [x] Implement the render function from the templates.
 - [x] Make a demo with automatic data loading and render.
 - [x] Publish the source code.
+- [x] Create a template for Vrac projects.
+- [ ] Video demo.
 
 ### Milestone 2
 
@@ -18,6 +20,7 @@
   - ...
 - [ ] Improve convenience of deriving new things from the AST.
 - [ ] Reimplement get-query and get-renderer.
+- [ ] Video demo.
 
 ### Milestone 3
 
@@ -26,17 +29,29 @@
 - [ ] Use automatic data normalization and local store management.
 - [ ] Define how users describe data fetching.
 - [ ] Routing, revisited.
+- [ ] Video demo.
 
 ### Milestone 4
 
 - [ ] i18n via template derivation.
 - [ ] Global rendering optimizations.
 - [ ] Interop with 3rd party React components.
-- [ ] Interop with external CSS libs.
+- [ ] Video demo.
 
 ### Milestone 5
 
 - [ ] Debug tools in browser.
 - [ ] New renderer for Vrac components (without React)
   while keeping interop with React.
+- [ ] Video demo.
+
+### Milestone 6
+
 - [ ] Subscription, realtime and websocket.
+- [ ] Video demo.
+
+### Milestone 7
+
+- [ ] Interop with external CSS libs.
+- [ ] Drag and drop system.
+- [ ] Video demo.
