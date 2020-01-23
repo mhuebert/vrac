@@ -24,8 +24,35 @@
 ;; enriched with all the information that one can grab.
 ;; Consider using a functional zipper for multi-directional navigation and node enrichment.
 ;; Consider using rules instead of functions when enriching the tree.
-(defn parse-template [template]
+(defn template->ast [template]
   (s/conform ::vc/template template))
+
+(defn ast->template [[kw val :as parsed-template]]
+  ;; I am waiting for Clojure spec2 to support recursion to simply use s/unform.
+  ;(s/unform ::vc/template parsed-template)
+  (case kw
+    (:boolean :number :string :keyword :symbol :nil) val
+    :map (into {} (map (juxt ast->template ast->template)) val)
+    :get-kw (let [{:keys [keyword valuable]} val]
+              (list keyword (ast->template valuable)))
+    :if (let [{:keys [cond then else]} val]
+          (list 'if (ast->template cond)
+            (ast->template then)
+            (ast->template else)))
+    :when (let [{:keys [cond then]} val]
+            (list 'when (ast->template cond)
+              (ast->template then)))
+    (:let :for) (let [{:keys [directive bindings body]} val]
+                  (list directive
+                        (into []
+                              (mapcat (juxt :symbol (comp ast->template :valuable)))
+                              bindings)
+                        (ast->template body)))
+    :comp (let [{:keys [keyword props children]} val]
+            (into (cond-> [keyword]
+                          props (conj (ast->template props)))
+                  (map ast->template) children))
+    (:dsl :valuable) (ast->template val)))
 
 ;; TODO: Instead of visiting nodes in each different function and collecting the children,
 ;; use a visitor or maybe a functional zipper.

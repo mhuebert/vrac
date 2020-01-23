@@ -1,14 +1,14 @@
 (ns vrac.core-test
   (:require #?(:clj  [clojure.test :refer [deftest testing is are]]
                :cljs [cljs.test :refer [deftest testing is are] :include-macros true])
-            [vrac.core :as v :refer [parse-template
+            [vrac.core :as v :refer [template->ast
                                      get-template-props
                                      get-queries
                                      render]]))
 
 (deftest get-template-props-test
   (are [template props]
-    (= (get-template-props (parse-template template)) props)
+    (= (get-template-props (template->ast template)) props)
 
     nil
     #{}
@@ -39,7 +39,7 @@
 
 (deftest get-deps-test
   (are [template deps]
-    (= (#'v/get-deps {} {} (parse-template template)) deps)
+    (= (#'v/get-deps {} {} (template->ast template)) deps)
 
     nil
     [[]]
@@ -89,11 +89,11 @@
       [ctx1 :1 :3 :6]])
 
   (let [components {::item {:parsed-template
-                            (parse-template '[:li (:item/name item)])}
+                            (template->ast '[:li (:item/name item)])}
                     ::list {:parsed-template
-                            (parse-template '[:ul
-                                              (for [item (:list/items list)]
-                                                [::item {:item item}])])}}
+                            (template->ast '[:ul
+                                             (for [item (:list/items list)]
+                                               [::item {:item item}])])}}
         env {:components components}]
     (are [component-id deps]
       (= (#'v/get-deps env {} (-> env :components component-id :parsed-template)) deps)
@@ -149,7 +149,7 @@
 
 (deftest get-queries-test
   (are [template eql-queries]
-    (let [env {:components {:comp {:parsed-template (parse-template template)}}}]
+    (let [env {:components {:comp {:parsed-template (template->ast template)}}}]
       (= (get-queries env :comp) eql-queries))
 
     nil
@@ -206,7 +206,7 @@
                                         {:name "Cat"
                                          :alias ["MiaoMiao" "Miaaaawww"]}]}}]
     (are [props template hiccup]
-      (= (render props (parse-template template)) hiccup)
+      (= (render props (template->ast template)) hiccup)
 
       '{nil {:my-user {:name "John"
                        :male? true}}}

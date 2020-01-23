@@ -62,7 +62,7 @@
 
 
 (defmacro render-fn [template]
-  (let [parsed-template (v/parse-template template)
+  (let [parsed-template (v/template->ast template)
         props (v/get-template-props parsed-template)
         body (compile-template parsed-template)]
     `(~'fn [{:keys [~@props]}] ~body)))
@@ -79,9 +79,9 @@
                        [:p "name: " (:name buddy)]
                        [:p "age: " (:age buddy)]])]]])
 
-  (compile-template (v/parse-template template))
+  (compile-template (v/template->ast template))
 
   (-> '(let [age (:age user)]
          [:p "age: " age])
-      v/parse-template
+      v/template->ast
       compile-template))
