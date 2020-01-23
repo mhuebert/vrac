@@ -140,6 +140,56 @@
         candidate
         (recur (inc n) (symbol symb-ns (str (name symb) "_" n)))))))
 
+(defn- renamed-template
+  "Returns a template resulting from renaming all the bound variables
+   whose symbol appear in the parent-symbs set."
+  ([parent-symbs parsed-template]
+   (renamed-template parent-symbs #{} {} parsed-template))
+  ([parent-symbs local-symbs renames [kw val :as parsed-template]]
+   (case kw
+     (:nil :boolean :number :string :keyword) parsed-template
+     :symbol [kw (renames val val)]
+     :map [kw (into {}
+                    (map (fn [[k v]]
+                           [(renamed-template parent-symbs local-symbs renames k)
+                            (renamed-template parent-symbs local-symbs renames v)]))
+                    val)]
+     :get-kw [kw (update val :valuable (partial renamed-template parent-symbs local-symbs renames))]
+     :when (let [{:keys [cond then]} val]
+             [kw {:cond (renamed-template parent-symbs local-symbs renames cond)
+                  :then (renamed-template parent-symbs local-symbs renames then)}])
+     :if (let [{:keys [cond then else]} val]
+           [kw {:cond (renamed-template parent-symbs local-symbs renames cond)
+                :then (renamed-template parent-symbs local-symbs renames then)
+                :else (renamed-template parent-symbs local-symbs renames else)}])
+     (:let :for) (let [{:keys [bindings body]} val
+                       [parent-symbs local-symbs renames bindings]
+                       (reduce (fn [[parent-symbs local-symbs renames bindings] {:keys [symbol valuable]}]
+                                 (let [[new-parent-symbs new-renames] (if (and (contains? parent-symbs symbol)
+                                                                               (not (contains? renames symbol)))
+                                                                        (let [new-symb (conflict-free-symbol symbol (into parent-symbs local-symbs))]
+                                                                          [(conj parent-symbs new-symb)
+                                                                           (assoc renames symbol new-symb)])
+                                                                        [parent-symbs renames])
+                                       new-symbol (new-renames symbol symbol)
+                                       new-local-symbs (conj local-symbs new-symbol)]
+                                   [new-parent-symbs
+                                    new-local-symbs
+                                    new-renames
+                                    (conj bindings
+                                          {:symbol new-symbol
+                                           :valuable (renamed-template parent-symbs local-symbs renames valuable)})]))
+                               [parent-symbs local-symbs renames []]
+                               bindings)]
+                   [kw (assoc val
+                         :bindings bindings
+                         :body (renamed-template parent-symbs local-symbs renames body))])
+     :comp (let [{:keys [keyword props children]} val]
+             [kw (cond-> val
+                         props (assoc :props (renamed-template parent-symbs local-symbs renames props))
+                         children (assoc :children (mapv (partial renamed-template parent-symbs local-symbs renames) children)))])
+     (:dsl :valuable) [kw (renamed-template parent-symbs local-symbs renames val)])))
+
 (defn- get-comp-deps
   "Finds the dependencies in a component."
   [env context component-id]

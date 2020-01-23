@@ -2,6 +2,7 @@
   (:require #?(:clj  [clojure.test :refer [deftest testing is are]]
                :cljs [cljs.test :refer [deftest testing is are] :include-macros true])
             [vrac.core :as v :refer [template->ast
+                                     ast->template
                                      get-template-props
                                      get-queries
                                      render]]))
@@ -110,6 +111,43 @@
     'a #{'a} 'a_0
     'a #{'a 'a_0} 'a_1
     'x/a #{'x/a 'x/a_0} 'x/a_1))
+
+(deftest renamed-template-test
+  (are [parent-symbs template result]
+    (= (->> (template->ast template)
+            (#'v/renamed-template parent-symbs)
+            ast->template)
+       result)
+
+    #{'x}
+    '[:p x y]
+    '[:p x y]
+
+    #{}
+    '(let [x (:a nil)] [:p x])
+    '(let [x (:a nil)] [:p x])
+
+    #{'x 'y}
+    '(let [x (:a nil)] [:p x y])
+    '(let [x_0 (:a nil)] [:p x_0 y])
+
+    #{'x}
+    '(let [x (:a nil)
+           x (:b nil)] [:p x])
+    '(let [x_0 (:a nil)
+           x_0 (:b nil)] [:p x_0])
+
+    #{'x}
+    '(let [x (:a nil)
+           x_0 (:b nil)] [:p x x_0])
+    '(let [x_0 (:a nil)
+           x_0_0 (:b nil)] [:p x_0 x_0_0])
+
+    #{'x}
+    '(let [x_0 (:a nil)
+           x (:b nil)] [:p x_0 x])
+    '(let [x_0 (:a nil)
+           x_1 (:b nil)] [:p x_0 x_1])))
 
 (deftest deps->eql-test
   (are [deps eql-queries]
