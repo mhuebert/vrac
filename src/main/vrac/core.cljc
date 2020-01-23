@@ -131,6 +131,15 @@
                 (get-comp-deps env comp-context component-id))))
     (:dsl :valuable) (get-deps env context val)))
 
+(defn- conflict-free-symbol
+  "Returns a symbol similar to symb and which is not in the existing-symb set."
+  [symb existing-symbs]
+  (let [symb-ns (namespace symb)]
+    (loop [n 0, candidate symb]
+      (if-not (contains? existing-symbs candidate)
+        candidate
+        (recur (inc n) (symbol symb-ns (str (name symb) "_" n)))))))
+
 (defn- get-comp-deps
   "Finds the dependencies in a component."
   [env context component-id]

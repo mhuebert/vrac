@@ -101,6 +101,16 @@
       ::item '[[item :item/name]]
       ::list '[[list :list/items :item/name]])))
 
+(deftest conflict-free-symbol-test
+  (are [symb existing-symbs result]
+    (= (#'v/conflict-free-symbol symb existing-symbs) result)
+
+    'a #{} 'a
+    'a #{'b} 'a
+    'a #{'a} 'a_0
+    'a #{'a 'a_0} 'a_1
+    'x/a #{'x/a 'x/a_0} 'x/a_1))
+
 (deftest deps->eql-test
   (are [deps eql-queries]
     (= (#'v/deps->eql deps) eql-queries)
