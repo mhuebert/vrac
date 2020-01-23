@@ -5,7 +5,8 @@
                                      ast->template
                                      get-template-props
                                      get-queries
-                                     render]]))
+                                     render
+                                     with-components]]))
 
 (deftest get-template-props-test
   (are [template props]
@@ -148,6 +149,37 @@
            x (:b nil)] [:p x_0 x])
     '(let [x_0 (:a nil)
            x_1 (:b nil)] [:p x_0 x_1])))
+
+(deftest expanded-template-test
+  (are [components component-id result]
+    (= (let [comps (mapv (fn [component]
+                           (assoc component
+                             :parsed-template (v/template->ast (:template component))))
+                         components)
+             env (v/with-components {} comps)]
+         (-> (#'v/expanded-template env component-id)
+             v/ast->template))
+       result)
+
+    ;; Case with conflicting names
+    '[{:id :app/aaa
+       :props [a b]
+       :template (for [y (:aaa nil)]
+                   [:p a b y])}
+      {:id :app/bbb
+       :props [x]
+       :template (for [y (:bbb nil)]
+                   [:app/aaa {:a x
+                              :b y}])}
+      {:id :app/ccc
+       :props []
+       :template (let [y (:ccc nil)]
+                   [:app/bbb {:x y}])}]
+    :app/ccc
+    '(let [y (:ccc nil)]
+       (for [y_0 (:bbb nil)]
+         (for [y_1 (:aaa nil)]
+           [:p y y_0 y_1])))))
 
 (deftest deps->eql-test
   (are [deps eql-queries]

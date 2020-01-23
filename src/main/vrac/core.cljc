@@ -186,9 +186,55 @@
                          :body (renamed-template parent-symbs local-symbs renames body))])
      :comp (let [{:keys [keyword props children]} val]
              [kw (cond-> val
-                         props (assoc :props (renamed-template parent-symbs local-symbs renames props))
+                         props (assoc :props (into {}
+                                                   (map (fn [[k v]]
+                                                          [k (renamed-template parent-symbs local-symbs renames v)]))
+                                                   props))
                          children (assoc :children (mapv (partial renamed-template parent-symbs local-symbs renames) children)))])
      (:dsl :valuable) [kw (renamed-template parent-symbs local-symbs renames val)])))
+
+(defn- expanded-template
+  "Returns a template resulting from inlining all the component occurrences."
+  ([env component-id]
+   (expanded-template env {} #{} (-> env :components component-id :parsed-template)))
+  ([env context local-symbs [kw val :as parsed-template]]
+   (case kw
+     (:nil :boolean :number :string :keyword) parsed-template
+     :symbol (context val parsed-template)
+     :map [kw (into {}
+                    (map (fn [[k v]]
+                           [(expanded-template env context local-symbs k)
+                            (expanded-template env context local-symbs v)]))
+                    val)]
+     :get-kw [kw (update val :valuable (partial expanded-template env context local-symbs))]
+     :when (let [{:keys [cond then]} val]
+             [kw {:cond (expanded-template env context local-symbs cond)
+                  :then (expanded-template env context local-symbs then)}])
+     :if (let [{:keys [cond then else]} val]
+           [kw {:cond (expanded-template env context local-symbs cond)
+                :then (expanded-template env context local-symbs then)
+                :else (expanded-template env context local-symbs else)}])
+     (:let :for) (let [{:keys [bindings body]} val
+                       local-symbs (into local-symbs (map :symbol) bindings)]
+                   [kw (assoc val :body (expanded-template env context local-symbs body))])
+     :comp (let [{:keys [keyword props children]} val
+                 {:keys [tag]} (tag-id-class keyword)
+                 component-id tag]
+             (if (or (simple-keyword? keyword)
+                     (nil? (-> env :components component-id :parsed-template)))
+               ; an html node or an external component
+               [kw (cond-> val
+                           props (assoc :props (expanded-template env context local-symbs props))
+                           children (assoc :children (mapv (partial expanded-template env context local-symbs) children)))]
+               ; a vrac component (inline it)
+               (let [comp-context (into {}
+                                        (map (fn [[k v]]
+                                               [(symbol k) (expanded-template env context local-symbs v)]))
+                                        props)]
+                 (->> (-> env :components component-id :parsed-template)
+                      (renamed-template local-symbs)
+                      (expanded-template env comp-context local-symbs)))))
+     (:dsl :valuable) [kw (expanded-template env context local-symbs val)])))
 
 (defn- get-comp-deps
   "Finds the dependencies in a component."
