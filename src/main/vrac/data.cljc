@@ -48,3 +48,20 @@
       (conj elements [nil nil cut-entities]))
 
     :else [[nil nil entity]]))
+
+(defn assoc-db
+  "Returns a db with information replaced by the entity."
+  [db [table id entity]]
+  (assoc-in db [table id] entity))
+
+(defn dissoc-db
+  "Returns a db with information removed at specified entity path."
+  [db [table id]]
+  (update db table dissoc id))
+
+(defn update-db
+  "Returns a db with information updated by the entity."
+  ([db [table id entity]]
+   (update-db merge db [table id entity]))
+  ([f-merge db [table id entity]]
+   (update-in db [table id] f-merge entity)))

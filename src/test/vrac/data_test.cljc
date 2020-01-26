@@ -74,3 +74,80 @@
     [[:user/id 1 #:user{:id 1
                         :name "Johanna"}]
      [nil nil {:a [:user/id 1], :b 7}]]))
+
+(deftest assoc-db-test
+  (are [db-before elements db-after]
+    (= (reduce vd/assoc-db db-before elements) db-after)
+
+    ;; Insert things in the DB
+    {}
+    [[:cow/id 1 #:cow {:id 1, :name "la noire", :age 2}]
+     [:cow/id 2 #:cow {:id 2, :name "bella", :age 3}]]
+    {:cow/id {1 #:cow {:id 1, :name "la noire", :age 2}
+              2 #:cow {:id 2, :name "bella", :age 3}}}
+
+    ;; Replace things in the DB
+    {:cow/id {1 #:cow {:id 1, :name "la noire", :age 2}
+              2 #:cow {:id 2, :name "bella", :age 3}}}
+    [[:cow/id 1 #:cow {:id 1, :name "la noiraude"}]]
+    {:cow/id {1 #:cow {:id 1, :name "la noiraude"}
+              2 #:cow {:id 2, :name "bella", :age 3}}}))
+
+(deftest dissoc-db-test
+  (are [db-before elements db-after]
+    (= (reduce vd/dissoc-db db-before elements) db-after)
+
+    ;; Remove things in the DB
+    {:cow/id {1 #:cow {:id 1, :name "la noire", :age 2}
+              2 #:cow {:id 2, :name "bella", :age 3}
+              3 #:cow {:id 3, :name "tulipe", :age 4}}}
+    [[:cow/id 1 #:cow {:id 1, :name "la noire", :age 2}] ; the entity value is ignored
+     [:cow/id 2]] ; it can be omitted
+    {:cow/id {3 #:cow {:id 3, :name "tulipe", :age 4}}}
+
+    ;; Remove remaining entities in the DB
+    {:cow/id {3 #:cow {:id 3, :name "tulipe", :age 4}}}
+    [[:cow/id 3]]
+    {:cow/id {}}))
+
+(deftest update-db-test
+  ;; With the default merge function ...
+  (are [db-before elements db-after]
+    (= (reduce vd/update-db db-before elements) db-after)
+
+    ;; Insert things in the DB
+    {}
+    [[:cow/id 1 #:cow {:id 1, :name "la noire", :age 2}]
+     [:cow/id 2 #:cow {:id 2, :name "bella", :age 3}]]
+    {:cow/id {1 #:cow {:id 1, :name "la noire", :age 2}
+              2 #:cow {:id 2, :name "bella", :age 3}}}
+
+    ;; Update things in the DB
+    {:cow/id {1 #:cow {:id 1, :name "la noire", :age 2}
+              2 #:cow {:id 2, :name "bella", :age 3}}}
+    [[:cow/id 1 #:cow {:id 1, :name "la noiraude"}]]
+    {:cow/id {1 #:cow {:id 1, :name "la noiraude", :age 2}
+              2 #:cow {:id 2, :name "bella", :age 3}}})
+
+  ;; With a custom merge function ...
+  (are [db-before f-merge elements db-after]
+    (= (reduce (partial vd/update-db f-merge) db-before elements) db-after)
+
+    ;; Insert things in the DB
+    {}
+    (fn [cow new-cow]
+      (select-keys new-cow [:cow/id :cow/name]))
+    [[:cow/id 1 #:cow {:id 1, :name "la noire", :age 2}]
+     [:cow/id 2 #:cow {:id 2, :name "bella", :age 3}]]
+    {:cow/id {1 #:cow {:id 1, :name "la noire"}
+              2 #:cow {:id 2, :name "bella"}}}
+
+    ;; Replace things in the DB
+    {:cow/id {1 #:cow {:id 1, :name "la noire", :age 2}
+              2 #:cow {:id 2, :name "bella", :age 3}}}
+    (fn [cow new-cow]
+      (-> (merge cow new-cow)
+          (assoc :cow/prev-name (:cow/name cow))))
+    [[:cow/id 1 #:cow {:id 1, :name "la noiraude"}]]
+    {:cow/id {1 #:cow {:id 1, :name "la noiraude", :age 2, :prev-name "la noire"}
+              2 #:cow {:id 2, :name "bella", :age 3}}}))
