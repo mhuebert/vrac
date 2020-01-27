@@ -1,4 +1,5 @@
-(ns vrac.data)
+(ns vrac.data
+  (:refer-clojure :exclude [ident?]))
 
 (defn- get-primary-keywords
   "Returns a list of primary key's keywords found in the keys of the map m."
@@ -8,7 +9,7 @@
 (defn normalized-elements
   "Returns a list of elements of the shape [table id entity],
    where entity has each reference to another entity replaced by its ident
-   in the shape [table id]."
+   in the shape ^:ident [table id]."
   [primary-kws entity]
   (cond
     (map? entity)
@@ -28,7 +29,7 @@
                                               [(into res (pop child-elements))
                                                (assoc cut-entity k cut-v)]
                                               [(into res child-elements)
-                                               (assoc cut-entity k [table id])])))
+                                               (assoc cut-entity k ^:ident [table id])])))
                                         [[] {}]
                                         entity)]
       (conj elements [table-kw id-in-table cut-entity]))
@@ -42,7 +43,7 @@
                                                 [(into res (pop child-elements))
                                                  (conj cut-entities cut-v)]
                                                 [(into res child-elements)
-                                                 (conj cut-entities [table id])])))
+                                                 (conj cut-entities ^:ident [table id])])))
                                           [[] (empty entity)]
                                           entity)]
       (conj elements [nil nil cut-entities]))
@@ -79,4 +80,7 @@
   (get-in db ident))
 
 ;; ---------------------------------------------------------
+
+(defn ident? [val]
+  (:ident (meta val)))
 

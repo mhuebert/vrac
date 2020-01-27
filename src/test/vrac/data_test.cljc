@@ -113,3 +113,7 @@
               2 #:cow {:id 2, :name "bella", :age 8}
               3 #:cow {:id 3, :name "tulipe", :age 4}}}))
 
+(deftest ident?-test
+  (is (vd/ident? ^:ident [:cow/id 1]))
+  (is (not (vd/ident? [:cow/id 1]))))
+
