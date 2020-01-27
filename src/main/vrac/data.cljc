@@ -49,19 +49,34 @@
 
     :else [[nil nil entity]]))
 
-(defn assoc-db
-  "Returns a db with information replaced by the entity."
-  [db [table id entity]]
-  (assoc-in db [table id] entity))
+;; ---------------------------------------------------------
+;; 5 small utility functions that users are welcome to read,
+;; understand, and inline in their code where they see fit.
 
-(defn dissoc-db
-  "Returns a db with information removed at specified entity path."
-  [db [table id]]
+(defn db-assoc
+  "Returns a db with the entity replacing previous data."
+  ([db ident entity]
+   (assoc-in db ident entity)))
+
+(defn db-dissoc
+  "Returns a db with an entity removed."
+  [db [table id :as ident]]
   (update db table dissoc id))
 
-(defn update-db
-  "Returns a db with information updated by the entity."
-  ([db [table id entity]]
-   (update-db merge db [table id entity]))
-  ([f-merge db [table id entity]]
-   (update-in db [table id] f-merge entity)))
+(defn db-update
+  "Returns a db with an updated entity."
+  ([db ident f & args]
+   (apply update-in db ident f args)))
+
+(defn db-merge
+  "Returns a db with the entity merged on top of previous data."
+  ([db ident entity]
+   (update-in db ident merge entity)))
+
+(defn db-entity
+  "Returns the entity referred by the ident in the db."
+  [db ident]
+  (get-in db ident))
+
+;; ---------------------------------------------------------
+
