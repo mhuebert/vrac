@@ -24,8 +24,8 @@
     ; One to one entity relation
     {:user/id 1
      :user/name "Johanna"
-     :user/known-for {:tag/id 1
-                      :tag/name "Clojure Skills"}}
+     :user/known-for #:tag{:id 1
+                           :name "Clojure Skills"}}
     [[:tag/id 1 #:tag{:id 1
                       :name "Clojure Skills"}]
      [:user/id 1 #:user{:id 1
@@ -35,10 +35,10 @@
     ; One to many entity relation via a vector
     {:user/id 1
      :user/name "Johanna"
-     :user/belongings [{:item/id 1
-                        :item/name "MacBook Air"}
-                       {:item/id 2
-                        :item/name "Umbrella"}]}
+     :user/belongings [#:item{:id 1
+                              :name "MacBook Air"}
+                       #:item{:id 2
+                              :name "Umbrella"}]}
     [[:item/id 1 #:item{:id 1
                         :name "MacBook Air"}]
      [:item/id 2 #:item{:id 2
@@ -51,8 +51,8 @@
     ; One to many entity relation via a set
     {:user/id 1
      :user/name "Johanna"
-     :user/belongings #{{:item/id 1
-                         :item/name "MacBook Air"}}}
+     :user/belongings #{#:item{:id 1
+                               :name "MacBook Air"}}}
     [[:item/id 1 #:item{:id 1
                         :name "MacBook Air"}]
      [:user/id 1 #:user{:belongings #{[:item/id 1]}
@@ -84,16 +84,16 @@
        db-after)
 
     {}
-    [[:cow/id 1 #:cow {:id 1, :name "la noire", :age 2}]
-     [:cow/id 2 #:cow {:id 2, :name "bella", :age 3}]]
-    {:cow/id {1 #:cow {:id 1, :name "la noire", :age 2}
-              2 #:cow {:id 2, :name "bella", :age 3}}}
+    [[:cow/id 1 #:cow{:id 1, :name "la noire", :age 2}]
+     [:cow/id 2 #:cow{:id 2, :name "bella", :age 3}]]
+    {:cow/id {1 #:cow{:id 1, :name "la noire", :age 2}
+              2 #:cow{:id 2, :name "bella", :age 3}}}
 
-    {:cow/id {1 #:cow {:id 1, :name "la noire", :age 2}
-              2 #:cow {:id 2, :name "bella", :age 3}}}
-    [[:cow/id 1 #:cow {:id 1, :name "la noiraude", :age 2}]]
-    {:cow/id {1 #:cow {:id 1, :name "la noiraude", :age 2}
-              2 #:cow {:id 2, :name "bella", :age 3}}}))
+    {:cow/id {1 #:cow{:id 1, :name "la noire", :age 2}
+              2 #:cow{:id 2, :name "bella", :age 3}}}
+    [[:cow/id 1 #:cow{:id 1, :name "la noiraude", :age 2}]]
+    {:cow/id {1 #:cow{:id 1, :name "la noiraude", :age 2}
+              2 #:cow{:id 2, :name "bella", :age 3}}}))
 
 (deftest db-update-test
   (are [db-before idents db-after]
@@ -104,14 +104,14 @@
        db-after)
 
     ;; Update things in the DB, add 5 years to the specified cows.
-    {:cow/id {1 #:cow {:id 1, :name "la noire", :age 2}
-              2 #:cow {:id 2, :name "bella", :age 3}
-              3 #:cow {:id 3, :name "tulipe", :age 4}}}
+    {:cow/id {1 #:cow{:id 1, :name "la noire", :age 2}
+              2 #:cow{:id 2, :name "bella", :age 3}
+              3 #:cow{:id 3, :name "tulipe", :age 4}}}
     [[:cow/id 1]
      [:cow/id 2]]
-    {:cow/id {1 #:cow {:id 1, :name "la noire", :age 7}
-              2 #:cow {:id 2, :name "bella", :age 8}
-              3 #:cow {:id 3, :name "tulipe", :age 4}}}))
+    {:cow/id {1 #:cow{:id 1, :name "la noire", :age 7}
+              2 #:cow{:id 2, :name "bella", :age 8}
+              3 #:cow{:id 3, :name "tulipe", :age 4}}}))
 
 (deftest ident?-test
   (is (vd/ident? ^:ident [:cow/id 1]))
