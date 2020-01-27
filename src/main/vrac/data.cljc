@@ -84,3 +84,17 @@
 (defn ident? [val]
   (:ident (meta val)))
 
+;; Beware! Does not prevent infinite loops.
+;;
+;; Denormalization does not work in the general case, as the normalised db
+;; represents a directed graph of data with potentially some cycles which
+;; cannot be represented as a tree of data.
+;;
+;; This function is just here as an example, users are encouraged to work
+;; directly on the normalized db, or to make their own function to
+;; denormalize it according to their needs.
+(defn denormalize-entity [db entity]
+  (clojure.walk/prewalk (fn [val]
+                          (cond->> val
+                            (ident? val) (get-in db)))
+                        entity))

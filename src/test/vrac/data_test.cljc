@@ -117,3 +117,28 @@
   (is (vd/ident? ^:ident [:cow/id 1]))
   (is (not (vd/ident? [:cow/id 1]))))
 
+(deftest denormalize-entity-test
+  (are [db ident result]
+    (= (vd/denormalize-entity db (get-in db ident))
+       result)
+
+    {:user/id {1 #:user{:id 1
+                        :name "Johanna"
+                        :known-for ^:ident [:tag/id 1]
+                        :belongings [^:ident [:item/id 1]
+                                     ^:ident [:item/id 2]]}}
+     :item/id {1 #:item{:id 1
+                        :name "MacBook Air"}
+               2 #:item{:id 2
+                        :name "Umbrella"}}
+     :tag/id {1 #:tag{:id 1
+                      :name "Clojure Skills"}}}
+    [:user/id 1]
+    {:user/id 1
+     :user/name "Johanna"
+     :user/known-for #:tag{:id 1
+                           :name "Clojure Skills"}
+     :user/belongings [#:item{:id 1
+                              :name "MacBook Air"}
+                       #:item{:id 2
+                              :name "Umbrella"}]}))
