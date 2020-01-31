@@ -3,6 +3,10 @@
                :cljs [cljs.test :refer [deftest testing is are] :include-macros true])
             [vrac.data :as vd]))
 
+(deftest ident-test
+  (is (= (meta (vd/ident :cow/id 1))
+         {:ident true})))
+
 (deftest normalizer-entity-test
   (let [normalize (vd/normalizer #{:user/id
                                    :item/id
@@ -114,7 +118,12 @@
                 3 #:cow{:id 3, :name "tulipe", :age 4}}})))
 
 (deftest ident?-test
-  (is (vd/ident? ^:ident [:cow/id 1]))
+  (are [val]
+    (vd/ident? val)
+
+    ^:ident [:cow/id 1]
+    (vd/ident :cow/id 1))
+
   (is (not (vd/ident? [:cow/id 1]))))
 
 (deftest denormalize-entity-test

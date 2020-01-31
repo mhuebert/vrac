@@ -6,6 +6,11 @@
   [primary-kws m]
   (into [] (keep (comp primary-kws first)) m))
 
+(defn ident
+  "Returns an ident."
+  [table id]
+  ^:ident [table id])
+
 (defn normalizer [primary-kws]
   "Takes a set of primary key keywords and returns a function that
    returns a list of elements of the shape [table id entity],
@@ -30,7 +35,7 @@
                                                 [(into res (pop child-elements))
                                                  (assoc cut-entity k cut-v)]
                                                 [(into res child-elements)
-                                                 (assoc cut-entity k ^:ident [table id])])))
+                                                 (assoc cut-entity k (ident table id))])))
                                           [[] {}]
                                           entity)]
         (conj elements [table-kw id-in-table cut-entity]))
@@ -44,7 +49,7 @@
                                                   [(into res (pop child-elements))
                                                    (conj cut-entities cut-v)]
                                                   [(into res child-elements)
-                                                   (conj cut-entities ^:ident [table id])])))
+                                                   (conj cut-entities (ident table id))])))
                                             [[] (empty entity)]
                                             entity)]
         (conj elements [nil nil cut-entities]))
@@ -91,7 +96,9 @@
 
 ;; ---------------------------------------------------------
 
-(defn ident? [val]
+(defn ident?
+  "Returns true if val is an ident, false otherwise."
+  [val]
   (:ident (meta val)))
 
 ;; Beware! Does not prevent infinite loops.
