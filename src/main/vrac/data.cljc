@@ -111,6 +111,13 @@
   [val]
   (:ident (meta val)))
 
+(defn deref-ident
+  "Returns the pointed value in the db if val is an ident,
+   returns val otherwise."
+  [db val]
+  (cond->> val
+           (ident? val) (get-in db)))
+
 ;; Beware! Does not prevent infinite loops.
 ;;
 ;; Denormalization does not work in the general case, as the normalised db
@@ -121,7 +128,4 @@
 ;; directly on the normalized db, or to make their own function to
 ;; denormalize it according to their needs.
 (defn denormalize-entity [db entity]
-  (clojure.walk/prewalk (fn [val]
-                          (cond->> val
-                            (ident? val) (get-in db)))
-                        entity))
+  (clojure.walk/prewalk (partial deref-ident db) entity))
