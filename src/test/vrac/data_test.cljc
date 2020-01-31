@@ -3,6 +3,16 @@
                :cljs [cljs.test :refer [deftest testing is are] :include-macros true])
             [vrac.data :as vd]))
 
+(comment
+  (deftest find-matching-primary-keyword-test
+    (let [find-primary-keyword (vd/matching-primary-keyword-finder #{:user/id
+                                                                     :shop/id})]
+      (are [kw result]
+        (= (find-primary-keyword kw) result)
+
+        :user/name :user/id
+        :shop/articles :shop/id))))
+
 (deftest ident-test
   (is (= (meta (vd/ident :cow/id 1))
          {:ident true})))

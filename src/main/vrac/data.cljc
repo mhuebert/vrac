@@ -1,6 +1,16 @@
 (ns vrac.data
   (:refer-clojure :exclude [ident?]))
 
+(comment
+  (defn matching-primary-keyword-finder
+    "Returns a function that use the namespace of a keyword to find
+     a matching primary keyword, supposing (by convention) that
+     they both use the same namespace."
+    [primary-kws]
+    (let [ns->primary-kw (into {} (map (juxt namespace identity)) primary-kws)]
+      (fn [kw]
+        (ns->primary-kw (namespace kw))))))
+
 (defn- get-primary-keywords
   "Returns a list of primary key's keywords found in the keys of the map m."
   [primary-kws m]
